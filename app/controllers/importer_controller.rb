@@ -32,13 +32,13 @@ class ImporterController < ApplicationController
     iip.col_sep = params[:splitter]
     iip.encoding = params[:encoding]
     iip.created = Time.new
-    iip.csv_data = params[:file].read unless params[:file].blank?
+    params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read
     iip.save
 
     # Put the timestamp in the params to detect
     # users with two imports in progress
     @import_timestamp = iip.created.strftime("%Y-%m-%d %H:%M:%S")
-    @original_filename = params[:file].original_filename
+    params[:file].blank? ? @original_filename = "" : @original_filename = params[:file].original_filename
 
     flash.delete(:error)
     validate_csv_data(iip.csv_data)
