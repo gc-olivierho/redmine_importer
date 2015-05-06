@@ -1,8 +1,8 @@
 require 'csv'
 require 'tempfile'
 
-MultipleIssuesForUniqueValue = Class.new(Exception)
-NoIssueForUniqueValue = Class.new(Exception)
+MultipleIssuesForUniqueValue = Class.new(StandardError)
+NoIssueForUniqueValue = Class.new(StandardError)
 
 class Journal < ActiveRecord::Base
   def empty?(*args)
@@ -648,7 +648,7 @@ class ImporterController < ApplicationController
         "'#{attr_value}' in issue #{@failed_count} has duplicate record"
       raise MultipleIssuesForUniqueValue, "Unique field #{unique_attr} with" \
         " value '#{attr_value}' has duplicate record"
-    elsif issues.size == 0 || issue[0].nil?
+    elsif issues.size == 0 || issues[0].nil?
       raise NoIssueForUniqueValue, "No issue with #{unique_attr} of '#{attr_value}' found"
     else
       issues.first
