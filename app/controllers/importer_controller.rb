@@ -365,10 +365,13 @@ class ImporterController < ApplicationController
           @skip_count += 1
           raise RowFailed
         else
-          log_failure(row,
-                      "Warning: Could not update issue #{@failed_count+1} below," \
-                        " no match for the value #{row[unique_field]} were found")
-          raise RowFailed
+          # We create the entry if the ID was null, we raise an error if it was not null and could not be found
+          if !row[unique_field].nil? 
+            log_failure(row,
+                        "Warning: Could not update issue #{@failed_count+1} below," \
+                          " no match for the value #{row[unique_field]} were found")
+            raise RowFailed
+          end
         end
 
       rescue MultipleIssuesForUniqueValue
