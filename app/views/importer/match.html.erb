@@ -45,7 +45,7 @@
       <%= l(:label_unique_field) %>
       <%= select_tag "unique_field",
         raw("<option value=\"\">#{l(:option_ignore)}</option>") +
-        options_for_select(@headers.map{|header| force_utf8(header)}) %>
+        options_for_select(@headers.map{|header| force_utf8(header)}, 'Id') %>
     </label>
     <br/>
     <label>
@@ -54,12 +54,12 @@
     </label>
     <br/>
     <label>
-      <%= check_box_tag "add_categories", true, true %>
+      <%= check_box_tag "add_categories", true, false %>
       <%= l(:label_importer_add_categories) %>
     </label>
     <br/>
     <label>
-      <%= check_box_tag "add_versions", true, true %>
+      <%= check_box_tag "add_versions", true, false %>
       <%= l(:label_importer_add_versions) %>
     </label>
     <br/>
@@ -74,7 +74,7 @@
     </label>
     <br/>
     <label>
-      <%= check_box_tag "update_issue", true, false %>
+      <%= check_box_tag "update_issue", true, true %>
       <%= l(:label_update_issue) %>
     </label>
     <br/>
