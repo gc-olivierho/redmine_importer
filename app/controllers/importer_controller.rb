@@ -159,8 +159,8 @@ class ImporterController < ApplicationController
 
         issue = Issue.new
 
-        if use_issue_id
-          issue.id = fetch("id", row)
+        if use_issue_id && !row[unique_field].nil?
+          issue.id = row[unique_field]
         end
 
         tracker = Tracker.find_by_name(fetch("tracker", row))
@@ -249,7 +249,7 @@ class ImporterController < ApplicationController
           @messages << "Error: #{attr} #{error_message}"
         end
       else
-        if unique_field
+        if unique_field && !row[unique_field].nil?
           @issue_by_unique_attr[row[unique_field]] = issue
         end
 
@@ -648,7 +648,7 @@ class ImporterController < ApplicationController
         "'#{attr_value}' in issue #{@failed_count} has duplicate record"
       raise MultipleIssuesForUniqueValue, "Unique field #{unique_attr} with" \
         " value '#{attr_value}' has duplicate record"
-    elsif issues.size == 0 || issues[0].nil?
+    elsif issues.size == 0 || issues.first.nil?
       raise NoIssueForUniqueValue, "No issue with #{unique_attr} of '#{attr_value}' found"
     else
       issues.first
