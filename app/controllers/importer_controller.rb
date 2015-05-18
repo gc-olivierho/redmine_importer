@@ -712,7 +712,7 @@ class ImporterController < ApplicationController
     end
   end
 
-  class RowFailed < Exception
+  class RowFailed < StandardError
   end
 
 end
