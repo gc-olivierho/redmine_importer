@@ -658,17 +658,34 @@ class ImporterController < ApplicationController
   # Returns the id for the given user or raises RecordNotFound
   # Implements a cache of users based on login name
   def user_for_login!(login)
+    login = login.downcase unless login.nil?
     begin
       if !@user_by_login.has_key?(login)
         @user_by_login[login] = User.find_by_login!(login)
       end
     rescue ActiveRecord::RecordNotFound
-      if params[:use_anonymous]
-        @user_by_login[login] = User.anonymous()
+    # Try with the full name (first + last or just last), as this is what Redmine displays in lists
+      new_cache_user = nil
+      if login.match(/ /)
+        firstname, lastname = *(login.split) # "First Last Throwaway"
+        new_cache_user ||= User.all.detect {|a|
+                       a.is_a?(User) && a.firstname.to_s.downcase == firstname &&
+                         a.lastname.to_s.downcase == lastname
+                     }
+      end
+      if new_cache_user.nil?
+        new_cache_user ||= User.all.detect {|a| a.name.downcase == login}
+      end
+      if !new_cache_user.nil?
+        @user_by_login[login] = new_cache_user
       else
-        @unfound_class = "User"
-        @unfound_key = login
-        raise
+        if params[:use_anonymous]
+          @user_by_login[login] = User.anonymous()
+        else
+          @unfound_class = "User"
+          @unfound_key = login
+          raise
+        end
       end
     end
     @user_by_login[login]
