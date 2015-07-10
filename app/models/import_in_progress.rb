@@ -5,6 +5,7 @@ class ImportInProgress < ActiveRecord::Base
   belongs_to :project
 
   before_save :encode_csv_data
+  attr_accessible :user_id
 
   private
   def encode_csv_data
