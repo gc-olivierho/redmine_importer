@@ -11,11 +11,12 @@
 
 <p><%= l(:label_result_projects) %>
   <br/>
+  <ul>
   <% @affect_projects_issues.each do |project, count|%>
-    <label class="tabular2"><%= project %>:</label>
-    <label class="tabular2"><%= l(:label_result_issues, count) %></label>
+    <li><%= project %>: <%= l(:label_result_issues, count) %></li>
     <br/>
   <% end %>
+  </ul>
 </p>
 
 <% if not @messages.empty? %>

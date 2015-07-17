@@ -78,13 +78,11 @@ class ImporterController < ApplicationController
     # Retrieve saved import data
     iip = ImportInProgress.find_by_user_id(User.current.id)
     if iip == nil
-      flash[:error] = "No import is currently in progress"
+      flash[:error] = l(:error_importer_no_import_in_progress, user: User.current.firstname + " " + User.current.lastname)
       return
     end
     if iip.created.strftime("%Y-%m-%d %H:%M:%S") != params[:import_timestamp]
-      flash[:error] = "You seem to have started another import " \
-        "since starting this one. " \
-        "This import cannot be completed"
+      flash[:error] = l(:error_importer_import_already_in_progress)
       return
     end
 
@@ -131,8 +129,7 @@ class ImporterController < ApplicationController
     # validate that the id attribute has been selected
     if use_issue_id
       if @attrs_map["id"].blank?
-        flash[:error] = "You must specify a column mapping for id" \
-          " when importing using provided issue ids."
+        flash[:error] = l(:error_importer_id_mapping)
       end
     end
 
@@ -205,9 +202,7 @@ class ImporterController < ApplicationController
         issue.tracker_id = tracker != nil ? tracker.id : default_tracker
         issue.author_id = author != nil ? author.id : User.current.id
       rescue ActiveRecord::RecordNotFound
-        log_failure(row, "Warning: When adding issue #{@failed_count+1} below," \
-                    " the #{@unfound_class} #{@unfound_key} was not found")
-        raise RowFailed
+        log_failure(row, l(:error_importer_record_not_found, error_pos: @failed_count+1, unfound_class: @unfound_class, unfound_key: @unfound_key))
       end
 
 
@@ -237,16 +232,15 @@ class ImporterController < ApplicationController
         issue_saved = issue.save
       rescue ActiveRecord::RecordNotUnique
         issue_saved = false
-        @messages << "This issue id has already been taken."
+        @messages << l(:error_importer_id_already_exists)
       end
 
       unless issue_saved
         @failed_count += 1
         @failed_issues[@failed_count] = row
-        @messages << "Warning: The following data-validation errors occurred" \
-          " on issue #{@failed_count} in the list below"
+        @messages << l(:error_importer_data_validation_failed, error_pos: @failed_count)
         issue.errors.each do |attr, error_message|
-          @messages << "Error: #{attr} #{error_message}"
+          @messages << l(:error_importer) + attr.to_s + " " + error_message.to_s
         end
       else
         if unique_field && !row[unique_field].nil?
@@ -342,6 +336,7 @@ class ImporterController < ApplicationController
         # ignore other project's issue or not
         if issue.project_id != @project.id && !update_other_project
           @skip_count += 1
+          @messages << l(:error_importer_row_skipped, id: row[unique_field])
           raise RowFailed
         end
 
@@ -349,6 +344,7 @@ class ImporterController < ApplicationController
         if issue.status.is_closed?
           if status == nil || status.is_closed?
             @skip_count += 1
+            @messages << l(:error_importer_row_skipped, id: row[unique_field])
             raise RowFailed
           end
         end
@@ -363,20 +359,18 @@ class ImporterController < ApplicationController
       rescue NoIssueForUniqueValue
         if ignore_non_exist
           @skip_count += 1
+          @messages << l(:error_importer_row_skipped, id: row[unique_field])
           raise RowFailed
         else
           # We create the entry if the ID was null, we raise an error if it was not null and could not be found
           if !row[unique_field].nil? 
-            log_failure(row,
-                        "Warning: Could not update issue #{@failed_count+1} below," \
-                          " no match for the value #{row[unique_field]} were found")
+            log_failure(row, l(:error_importer_update_failed_no_match, error_pos: @failed_count+1, value: row[unique_field]))
             raise RowFailed
           end
         end
 
       rescue MultipleIssuesForUniqueValue
-        log_failure("Warning: Could not update issue #{@failed_count+1} below," \
-                      " multiple matches for the value #{row[unique_field]} were found")
+        log_failure(l(:error_importer_update_failed_multiple, error_pos: @failed_count+1, value: row[unique_field]))
         raise RowFailed
       end
     end
@@ -424,18 +418,13 @@ class ImporterController < ApplicationController
     rescue NoIssueForUniqueValue
       if ignore_non_exist
         @skip_count += 1
+        @messages << l(:error_importer_row_skipped, id: row[unique_field])
       else
-        @failed_count += 1
-        @failed_issues[@failed_count] = row
-        @messages << "Warning: When setting the parent for issue #{@failed_count} below,"\
-            " no matches for the value #{parent_value} were found"
+      log_failure(row, l(:error_importer_parent_set_failed_no_match, error_pos: @failed_count, value: parent_value))
         raise RowFailed
       end
     rescue MultipleIssuesForUniqueValue
-      @failed_count += 1
-      @failed_issues[@failed_count] = row
-      @messages << "Warning: When setting the parent for issue #{@failed_count} below," \
-          " multiple matches for the value #{parent_value} were found"
+      log_failure(row, l(:error_importer_parent_set_failed_multiple, error_pos: @failed_count, value: parent_value))
       raise RowFailed
     end
   end
@@ -476,8 +465,7 @@ class ImporterController < ApplicationController
             @failed_issues[@failed_count] = row
           end
           watcher_failed_count += 1
-          @messages << "Warning: When trying to add watchers on issue" \
-                " #{@failed_count} below, User #{watcher} was not found"
+          @messages << l(:error_importer_add_watcher_failed, error_pos: @failed_count, user: watcher)
         end
       end
     end
@@ -510,8 +498,7 @@ class ImporterController < ApplicationController
               @failed_count += 1
               @failed_issues[@failed_count] = row
             end
-            @messages << "Warning: When trying to set custom field #{cf.name}" \
-                           " on issue #{@failed_count} below, value #{value} was invalid"
+            @messages << l(:error_importer_custom_field_set_failed, cf_name: cf.name, error_pos: @failed_count, value: value)
           end
         end
       end
@@ -543,8 +530,7 @@ class ImporterController < ApplicationController
 
   def validate_csv_data(csv_data)
     if csv_data.lines.to_a.size <= 1
-      flash[:error] = 'No data line in your CSV, check the encoding of the file'\
-        '<br/><br/>Header :<br/>'.html_safe + csv_data
+      flash[:error] = l(:error_importer_empty_csv).html_safe + csv_data
 
       redirect_to project_importer_path(:project_id => @project)
 
@@ -575,7 +561,7 @@ class ImporterController < ApplicationController
 
       # if there was an exception, probably happened on line after the last sampled.
       if csv_data_lines.size > 0
-        error_message += '<br/><br/>Error on header or line :<br/>'.html_safe +
+        error_message += "<br/><br/>".html_safe + l(:error_importer_csv_header).html_safe + "<br/>".html_safe + 
           csv_data_lines[@samples.size + 1]
       end
 
@@ -600,9 +586,10 @@ class ImporterController < ApplicationController
     }
 
     if missing_header_columns.present?
-      flash[:error] = "Column header missing : #{missing_header_columns}" \
-      " / #{@headers.size} #{'<br/><br/>Header :<br/>'.html_safe}" \
-      " #{iip.csv_data.lines.to_a[0]}"
+      flash[:error] = l(:error_importer_missing_header_columns, 
+                        missing_header_columns: missing_header_columns, 
+                        header_size: @headers.size,
+                        header_name: iip.csv_data.lines.to_a[0])
 
       redirect_to project_importer_path(:project_id => @project)
 
@@ -642,10 +629,7 @@ class ImporterController < ApplicationController
     end
 
     if issues.size > 1
-      @failed_count += 1
-      @failed_issues[@failed_count] = row_data
-      @messages << "Warning: Unique field #{unique_attr} with value " \
-        "'#{attr_value}' in issue #{@failed_count} has duplicate record"
+      log_failure(row_data, l(:error_importer_duplicate_key_field, field_name: unique_attr, value: attr_value, error_pos: @failed_count))
       raise MultipleIssuesForUniqueValue, "Unique field #{unique_attr} with" \
         " value '#{attr_value}' has duplicate record"
     elsif issues.size == 0 || issues.first.nil?

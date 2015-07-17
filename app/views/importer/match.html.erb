@@ -25,7 +25,7 @@
     <% @headers.each do |column| %>
       <% col = force_utf8(column) %>
       <label class="tabular">
-        <%= col %>:
+        <%= col %>:<br/>
         <%= select_tag "fields_map[#{col}]",
           raw("<option value=\"\">#{l(:option_ignore)}</option>") +
             options_for_select( @attrs, matched_attrs(column) ) %>
@@ -70,7 +70,7 @@
     <br/>
     <label>
       <%= check_box_tag "use_issue_id", true, false %>
-      Import using issue ids
+      <%= l(:label_importer_use_issue_ids) %>
     </label>
     <br/>
     <label>
