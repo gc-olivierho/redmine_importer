@@ -4,8 +4,8 @@ require 'tempfile'
 MultipleIssuesForUniqueValue = Class.new(StandardError)
 NoIssueForUniqueValue = Class.new(StandardError)
 
-class Journal < ActiveRecord::Base
-  def empty?(*args)
+Journal.class_exec do
+  def empty?
     (details.empty? && notes.blank?)
   end
 end
@@ -412,7 +412,7 @@ class ImporterController < ApplicationController
   def handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
     begin
       parent_value = row[@attrs_map["parent_issue"]]
-      if parent_value && (parent_value.length > 0)
+      if parent_value.present?
         issue.parent_issue_id = issue_for_unique_attr(unique_attr, parent_value, row).id
       end
     rescue NoIssueForUniqueValue
@@ -488,6 +488,8 @@ class ImporterController < ApplicationController
                         version_id_for_name!(project, value, add_versions).to_s
                       when 'date'
                         value.to_date.to_s(:db)
+                      when cf.field_format == 'list'
+                        value.split(',').map(&:strip)
                       else
                         value
                     end
