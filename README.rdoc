@@ -3,21 +3,18 @@
 User documentation for this plugin is 
 at https://github.com/leovitch/redmine_importer/wiki.
 
-This plugin is functional now, including in multiprocess environments.
-The plugin has been testes on Redmine 1.1, 1.2.0 and 2.2-stable.
+This plugin is functional, included in multiprocess environments.
+The plugin in its current version is tested and used in production environment with Redmine 3.0.3-stable.
 The database is used for intermediate storage.
 
 To install:
-- Prerequisites: Unless you are using ruby-1.9, you'll need the fastercsv gem (<code>gem install fastercsv</code> as root).
-  Versions 1.4 through 1.5.3 are tested.
 - Download the plugin to your 'plugins/' directory.  Be sure to maintain the correct folder name, 'redmine_importer'.
 - Run <code>rake redmine:plugins:migrate RAILS_ENV=production</code>
-- Restart your redmine as appropriate (e.g., <code>ruby script/rails server -e production</code>)
+- Restart your redmine as appropriate (e.g., <code>ruby script/rails server -e production</code> or <code>service httpd restart</code>, etc.)
 - Go to the Admin/Projects/../Modules
 - Enable "Importer"
 
-en, de, zh, pt-BR, ru and ja localizations included.
-The other localizations are up to date, but the zh is a little bit behind.
-If anyone could update it, it would be appreciated.
+en, fr, de, zh, pt-BR, ru and ja localizations included. Only en and fr are up to date regarding error messages.
+If anyone wants to update translations, or report / fix bugs it will be appreciated.
 
 User documentation at https://github.com/leovitch/redmine_importer/wiki.
