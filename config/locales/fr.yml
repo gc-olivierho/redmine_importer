@@ -49,6 +49,7 @@ fr:
   error_importer_data_validation_failed: "Avertissement : les erreurs de validation de données suivantes se sont produites pour la demande %{error_pos} de la liste ci-dessous:"
   error_importer: "Erreur : "
   error_importer_row_skipped: "La ligne d'id %{id} a été ignorée"
+  error_importer_enumfield_not_found: "La valeur du champ '%{field_name}' n'a pas été reconnue pour la ligne d'id %{id}"
   error_importer_update_failed_no_match: "Avertissement : impossible de mettre à jour la demande %{error_pos} ci-dessous, aucune correspondance n'a été trouvée pour la valeur %{value}."
   error_importer_update_failed_multiple: "Avertissement : impossible de mettre à jour la demande %{error_pos} ci-dessous, multiple matches for the value %{value} were found"
   error_importer_parent_set_failed_no_match: "Avertissement : aucune correspondance n'a été trouvée pour %{value} lors de l'affectation du champ Parent pour la demande %{error_pos} ci-dessous."

@@ -161,13 +161,22 @@ class ImporterController < ApplicationController
         end
 
         tracker = Tracker.find_by_name(fetch("tracker", row))
+        if (!tracker) 
+          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
+        end
         status = IssueStatus.find_by_name(fetch("status", row))
+        if (!status) 
+          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
+        end
         author = if @attrs_map["author"]
                    user_for_login!(fetch("author", row))
                  else
                    User.current
                  end
         priority = Enumeration.find_by_name(fetch("priority", row))
+        if (!priority) 
+          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
+        end
         category_name = fetch("category", row)
         category = IssueCategory.find_by_project_id_and_name(project.id,
                                                              category_name)
