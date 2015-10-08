@@ -379,7 +379,7 @@ class ImporterController < ApplicationController
         end
 
       rescue MultipleIssuesForUniqueValue
-        log_failure(l(:error_importer_update_failed_multiple, error_pos: @failed_count+1, value: row[unique_field]))
+        log_failure(row, l(:error_importer_update_failed_multiple, error_pos: @failed_count+1, value: row[unique_field]))
         raise RowFailed
       end
     end
@@ -461,7 +461,7 @@ class ImporterController < ApplicationController
       addable_watcher_users = issue.addable_watcher_users
       watchers.split(',').each do |watcher|
         begin
-          watcher_user = user_id_for_login!(watcher)
+          watcher_user = user_for_login!(watcher.strip)
           if issue.watcher_users.include?(watcher_user)
             next
           end
