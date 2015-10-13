@@ -49,6 +49,14 @@
     </label>
     <br/>
     <label>
+      <%= l(:label_journal_field) %>
+      <%= select_tag "journal_field",
+        raw("<option value=\"\">#{l(:option_ignore)}</option>") +
+        options_for_select(@headers.map{|header| force_utf8(header)}),
+        {:disabled => true} %>
+    </label>
+    <br/>
+    <label>
       <%= check_box_tag "send_emails", true, false %>
       <%= l(:label_importer_send_emails) %>
     </label>
@@ -81,24 +89,12 @@
 
     <%= yield :update_issue_javascript %>
 
-    &nbsp;&nbsp;&nbsp;&nbsp;
-    <label>
-      <%= l(:label_journal_field) %>
-      <%= select_tag "journal_field",
-        raw("<option value=\"\">#{l(:option_ignore)}</option>") +
-        options_for_select(@headers.map{|header| force_utf8(header)}),
-        {:disabled => true} %>
-    </label>
-    <br/>
-
-    &nbsp;&nbsp;&nbsp;&nbsp;
     <label>
       <%= check_box_tag "update_other_project", true, false, {:disabled => true} %>
       <%= l(:label_update_other_project) %>
     </label>
     <br/>
 
-    &nbsp;&nbsp;&nbsp;&nbsp;
     <label>
       <%= check_box_tag "ignore_non_exist", true, false, {:disabled => true} %>
       <%= l(:label_ignore_non_exist) %>
