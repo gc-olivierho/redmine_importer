@@ -58,5 +58,6 @@ en:
   error_importer_custom_field_set_failed: "Warning: When trying to set custom field %{cf_name} on issue %{error_pos} below, value %{value} was invalid."
   error_importer_empty_csv: "No data line in your CSV, check the encoding of the file<br/><br/>Header:<br/>"
   error_importer_csv_header: "Error on header or line:"
+  error_importer_csv_malformed: "Error in the CSV file (%{csv_error})"
   error_importer_missing_header_columns: "Column header missing: %{missing_header_columns} / %{header_size} <br/><br/>Header:<br/> %{header_name}"
   error_importer_duplicate_key_field: "Warning: Unique field %{field_name} with value '%{value}' in issue %{error_pos} has duplicate record."

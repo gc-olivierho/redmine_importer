@@ -18,7 +18,7 @@ class ImporterController < ApplicationController
   ISSUE_ATTRS = [:id, :subject, :assigned_to, :fixed_version,
                  :author, :description, :category, :priority, :tracker, :status,
                  :start_date, :due_date, :done_ratio, :estimated_hours,
-                 :parent_issue, :watchers ]
+                 :parent_issue, :watchers, :project ]
 
   def index; end
 
@@ -141,173 +141,173 @@ class ImporterController < ApplicationController
                :encoding=>iip.encoding,
                :quote_char=>iip.quote_char,
                :col_sep=>iip.col_sep}
-    CSV.new(iip.csv_data, csv_opt).each do |row|
-
-      project = Project.find_by_name(fetch("project", row))
-      project ||= @project
-
-      begin
-        row.each do |k, v|
-          k = k.unpack('U*').pack('U*') if k.kind_of?(String)
-          v = v.unpack('U*').pack('U*') if v.kind_of?(String)
-
-          row[k] = v
-        end
-
-        issue = Issue.new
-
-        if use_issue_id && !row[unique_field].nil?
-          issue.id = row[unique_field]
-        end
-
-        tracker = Tracker.find_by_name(fetch("tracker", row))
-        if (!tracker) 
-          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
-        end
-        status = IssueStatus.find_by_name(fetch("status", row))
-        if (!status) 
-          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
-        end
-        author = if @attrs_map["author"]
-                   user_for_login!(fetch("author", row))
-                 else
-                   User.current
-                 end
-        priority = Enumeration.find_by_name(fetch("priority", row))
-        if (!priority) 
-          @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
-        end
-        category_name = fetch("category", row)
-        category = IssueCategory.find_by_project_id_and_name(project.id,
-                                                             category_name)
-
-        if (!category) \
-          && category_name && category_name.length > 0 \
-          && add_categories
-
-          category = project.issue_categories.build(:name => category_name)
-          category.save
-        end
-
-        if fetch("assigned_to", row).present?
-          assigned_to = user_for_login!(fetch("assigned_to", row))
-        else
-          assigned_to = nil
-        end
-
-        if fetch("fixed_version", row).present?
-          fixed_version_name = fetch("fixed_version", row)
-          fixed_version_id = version_id_for_name!(project,
-                                                  fixed_version_name,
-                                                  add_versions)
-        else
-          fixed_version_name = nil
-          fixed_version_id = nil
-        end
-
-        watchers = fetch("watchers", row)
-
-        issue.project_id = project != nil ? project.id : @project.id
-        issue.tracker_id = tracker != nil ? tracker.id : default_tracker
-        issue.author_id = author != nil ? author.id : User.current.id
-      rescue ActiveRecord::RecordNotFound
-        log_failure(row, l(:error_importer_record_not_found, error_pos: @failed_count+1, unfound_class: @unfound_class, unfound_key: @unfound_key))
-      end
-
-
-
-      begin
-
-        unique_attr = translate_unique_attr(issue, unique_field, unique_attr, unique_attr_checked)
-
-        issue, journal = handle_issue_update(issue, row, author, status, update_other_project, journal_field,
-                                             unique_attr, unique_field, ignore_non_exist, update_issue)
-
-        project ||= Project.find_by_id(issue.project_id)
-
-        update_project_issues_stat(project)
-
-        assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
-        handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
-        handle_custom_fields(add_versions, issue, project, row)
-        handle_watchers(issue, row, watchers)
-      rescue RowFailed
-        next
-      end
-
-
-
-      begin
-        issue_saved = issue.save
-      rescue ActiveRecord::RecordNotUnique
-        issue_saved = false
-        @messages << l(:error_importer_id_already_exists)
-      end
-
-      unless issue_saved
-        @failed_count += 1
-        @failed_issues[@failed_count] = row
-        @messages << l(:error_importer_data_validation_failed, error_pos: @failed_count)
-        issue.errors.each do |attr, error_message|
-          @messages << l(:error_importer) + attr.to_s + " " + error_message.to_s
-        end
-      else
-        if unique_field && !row[unique_field].nil?
-          @issue_by_unique_attr[row[unique_field]] = issue
-        end
-
-        if send_emails
-          if update_issue
-            if Setting.notified_events.include?('issue_updated') \
-               && (!issue.current_journal.empty?)
-
-              Mailer.deliver_issue_edit(issue.current_journal)
-            end
+    # Catch CSV read errors
+    begin
+      CSV.new(iip.csv_data, csv_opt).each do |row|
+        project = Project.find_by_name(fetch("project", row))
+        project ||= @project
+    
+        begin
+          row.each do |k, v|
+            k = k.unpack('U*').pack('U*') if k.kind_of?(String)
+            v = v.unpack('U*').pack('U*') if v.kind_of?(String)
+  
+            row[k] = v
+          end
+  
+          issue = Issue.new
+  
+          if use_issue_id && !row[unique_field].nil?
+            issue.id = row[unique_field]
+          end
+  
+          tracker = Tracker.find_by_name(fetch("tracker", row))
+          if (!tracker) 
+            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
+          end
+          status = IssueStatus.find_by_name(fetch("status", row))
+          if (!status) 
+            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
+          end
+          author = if @attrs_map["author"]
+                     user_for_login!(fetch("author", row))
+                   else
+                     User.current
+                   end
+          priority = Enumeration.find_by_name(fetch("priority", row))
+          if (!priority) 
+            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
+          end
+          category_name = fetch("category", row)
+          category = IssueCategory.find_by_project_id_and_name(project.id,
+                                                               category_name)
+  
+          if (!category) \
+            && category_name && category_name.length > 0 \
+            && add_categories
+  
+            category = project.issue_categories.build(:name => category_name)
+            category.save
+          end
+  
+          if fetch("assigned_to", row).present?
+            assigned_to = user_for_login!(fetch("assigned_to", row))
           else
-            if Setting.notified_events.include?('issue_added')
-              Mailer.deliver_issue_add(issue)
+            assigned_to = nil
+          end
+  
+          if fetch("fixed_version", row).present?
+            fixed_version_name = fetch("fixed_version", row)
+            fixed_version_id = version_id_for_name!(project,
+                                                    fixed_version_name,
+                                                    add_versions)
+          else
+            fixed_version_name = nil
+            fixed_version_id = nil
+          end
+  
+          watchers = fetch("watchers", row)
+  
+          issue.project_id = project != nil ? project.id : @project.id
+          issue.tracker_id = tracker != nil ? tracker.id : default_tracker
+          issue.author_id = author != nil ? author.id : User.current.id
+        rescue ActiveRecord::RecordNotFound
+          log_failure(row, l(:error_importer_record_not_found, error_pos: @failed_count+1, unfound_class: @unfound_class, unfound_key: @unfound_key))
+        end
+  
+        begin
+          unique_attr = translate_unique_attr(issue, unique_field, unique_attr, unique_attr_checked)
+  
+          issue, journal = handle_issue_update(issue, row, author, status, update_other_project, journal_field,
+                                               unique_attr, unique_field, ignore_non_exist, update_issue)
+  
+          project ||= Project.find_by_id(issue.project_id)
+  
+          update_project_issues_stat(project)
+  
+          assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
+          handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
+          handle_custom_fields(add_versions, issue, project, row)
+          handle_watchers(issue, row, watchers)
+        rescue RowFailed
+          next
+        end
+  
+  
+        begin
+          issue_saved = issue.save
+        rescue ActiveRecord::RecordNotUnique
+          issue_saved = false
+          @messages << l(:error_importer_id_already_exists)
+        end
+  
+        unless issue_saved
+          @failed_count += 1
+          @failed_issues[@failed_count] = row
+          @messages << l(:error_importer_data_validation_failed, error_pos: @failed_count)
+          issue.errors.each do |attr, error_message|
+            @messages << l(:error_importer) + attr.to_s + " " + error_message.to_s
+          end
+        else
+          if unique_field && !row[unique_field].nil?
+            @issue_by_unique_attr[row[unique_field]] = issue
+          end
+  
+          if send_emails
+            if update_issue
+              if Setting.notified_events.include?('issue_updated') \
+                 && (!issue.current_journal.empty?)
+  
+                Mailer.deliver_issue_edit(issue.current_journal)
+              end
+            else
+              if Setting.notified_events.include?('issue_added')
+                Mailer.deliver_issue_add(issue)
+              end
             end
           end
-        end
-
-        # Issue relations
-        begin
-          IssueRelation::TYPES.each_pair do |rtype, rinfo|
-            if !row[@attrs_map[rtype]]
+  
+          # Issue relations
+          begin
+            IssueRelation::TYPES.each_pair do |rtype, rinfo|
+              if !row[@attrs_map[rtype]]
+                next
+              end
+              other_issue = issue_for_unique_attr(unique_attr,
+                                                  row[@attrs_map[rtype]],
+                                                  row)
+              relations = issue.relations.select do |r|
+                (r.other_issue(issue).id == other_issue.id) \
+                  && (r.relation_type_for(issue) == rtype)
+              end
+              if relations.length == 0
+                relation = IssueRelation.new(:issue_from => issue,
+                                             :issue_to => other_issue,
+                                             :relation_type => rtype)
+                relation.save
+              end
+            end
+          rescue NoIssueForUniqueValue
+            if ignore_non_exist
+              @skip_count += 1
               next
             end
-            other_issue = issue_for_unique_attr(unique_attr,
-                                                row[@attrs_map[rtype]],
-                                                row)
-            relations = issue.relations.select do |r|
-              (r.other_issue(issue).id == other_issue.id) \
-                && (r.relation_type_for(issue) == rtype)
-            end
-            if relations.length == 0
-              relation = IssueRelation.new(:issue_from => issue,
-                                           :issue_to => other_issue,
-                                           :relation_type => rtype)
-              relation.save
-            end
+          rescue MultipleIssuesForUniqueValue
+            break
           end
-        rescue NoIssueForUniqueValue
-          if ignore_non_exist
-            @skip_count += 1
-            next
+  
+          if journal
+            journal
           end
-        rescue MultipleIssuesForUniqueValue
-          break
+  
+          @handle_count += 1
         end
-
-        if journal
-          journal
-        end
-
-        @handle_count += 1
-
-      end
-
-    end # do
+      end # do
+    rescue CSV::MalformedCSVError => e
+      flash[:error] = l(:error_importer_csv_malformed, csv_error: e.message).html_safe
+      redirect_to project_importer_path(:project_id => @project)
+      return
+    end
 
     if @failed_issues.size > 0
       @failed_issues = @failed_issues.sort
@@ -563,7 +563,7 @@ class ImporterController < ApplicationController
                                break if i >= sample_count
                              end # do
 
-    rescue Exception => e
+    rescue CSV::MalformedCSVError => e
       csv_data_lines = iip.csv_data.lines.to_a
 
       error_message = e.message +
@@ -577,9 +577,7 @@ class ImporterController < ApplicationController
       end
 
       flash[:error] = error_message
-
       redirect_to project_importer_path(:project_id => @project)
-
       return
     end
   end
