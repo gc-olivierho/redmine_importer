@@ -54,8 +54,9 @@ class ImporterController < ApplicationController
     # fields
     @attrs = Array.new
     ISSUE_ATTRS.each do |attr|
-      #@attrs.push([l_has_string?("field_#{attr}".to_sym) ? l("field_#{attr}".to_sym) : attr.to_s.humanize, attr])
-      @attrs.push([l_or_humanize(attr, :prefix=>"field_"), attr])
+      if User.current && User.current.language.present?
+        @attrs << [l_or_humanize(attr, :prefix=>"field_", :default => attr, :locale =>  User.current.language), attr]
+      end
     end
     @project.all_issue_custom_fields.each do |cfield|
       @attrs.push([cfield.name, cfield.name])
@@ -360,7 +361,7 @@ class ImporterController < ApplicationController
         # ignore other project's issue or not
         if issue.project_id != @project.id && !update_other_project
           @skip_count += 1
-          @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_other_project_forbidden))
+          @messages << l(:error_importer_row_skipped, id: row[unique_field], reason: l(:error_importer_other_project_forbidden))
           raise RowFailed
         end
 
@@ -368,7 +369,7 @@ class ImporterController < ApplicationController
         if issue.status.is_closed?
           if status == nil || status.is_closed?
             @skip_count += 1
-            @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_issue_closed))
+            @messages << l(:error_importer_row_skipped, id: row[unique_field], reason: l(:error_importer_issue_closed))
             raise RowFailed
           end
         end
@@ -383,7 +384,7 @@ class ImporterController < ApplicationController
       rescue NoIssueForUniqueValue
         if ignore_non_exist
           @skip_count += 1
-          @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_issue_not_found))
+          @messages << l(:error_importer_row_skipped, id: row[unique_field], reason: l(:error_importer_issue_not_found))
           raise RowFailed
         else
           # We create the entry if the ID was null, we raise an error if it was not null and could not be found
