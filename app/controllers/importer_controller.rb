@@ -161,22 +161,37 @@ class ImporterController < ApplicationController
             issue.id = row[unique_field]
           end
   
-          tracker = Tracker.find_by_name(fetch("tracker", row))
-          if (!tracker) 
-            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
+          tracker_name = fetch("tracker", row)
+          if !tracker_name.nil?
+            tracker = Tracker.find_by_name(tracker_name)
+            if (@attrs_map["tracker"].present? && !tracker) 
+              @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
+            end
+          else
+            tracker = nil
           end
-          status = IssueStatus.find_by_name(fetch("status", row))
-          if (!status) 
-            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
+          status_name = fetch("status", row)
+          if !status_name.nil?
+            status = IssueStatus.find_by_name(status_name)
+            if (@attrs_map["status"].present? && !status) 
+              @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
+            end
+          else
+            status = nil
           end
           author = if @attrs_map["author"]
                      user_for_login!(fetch("author", row))
                    else
                      User.current
                    end
-          priority = Enumeration.find_by_name(fetch("priority", row))
-          if (!priority) 
-            @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
+          priority_name = fetch("priority", row)
+          if !priority_name.nil?
+            priority = Enumeration.find_by_name(priority_name)
+            if (@attrs_map["priority"].present? && !priority) 
+              @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
+            end
+          else
+            priority = nil
           end
           category_name = fetch("category", row)
           category = IssueCategory.find_by_project_id_and_name(project.id,
@@ -345,7 +360,7 @@ class ImporterController < ApplicationController
         # ignore other project's issue or not
         if issue.project_id != @project.id && !update_other_project
           @skip_count += 1
-          @messages << l(:error_importer_row_skipped, id: row[unique_field])
+          @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_other_project_forbidden))
           raise RowFailed
         end
 
@@ -353,7 +368,7 @@ class ImporterController < ApplicationController
         if issue.status.is_closed?
           if status == nil || status.is_closed?
             @skip_count += 1
-            @messages << l(:error_importer_row_skipped, id: row[unique_field])
+            @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_issue_closed))
             raise RowFailed
           end
         end
@@ -368,7 +383,7 @@ class ImporterController < ApplicationController
       rescue NoIssueForUniqueValue
         if ignore_non_exist
           @skip_count += 1
-          @messages << l(:error_importer_row_skipped, id: row[unique_field])
+          @messages << l(:error_importer_row_skipped, id: row[unique_field], :reason l(:error_importer_issue_not_found))
           raise RowFailed
         else
           # We create the entry if the ID was null, we raise an error if it was not null and could not be found
@@ -427,7 +442,7 @@ class ImporterController < ApplicationController
     rescue NoIssueForUniqueValue
       if ignore_non_exist
         @skip_count += 1
-        @messages << l(:error_importer_row_skipped, id: row[unique_field])
+        @messages << l(:error_importer_row_skipped, id: row[unique_field], reason: l(:error_importer_issue_not_found))
       else
       log_failure(row, l(:error_importer_parent_set_failed_no_match, error_pos: @failed_count, value: parent_value))
         raise RowFailed
