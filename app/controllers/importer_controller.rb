@@ -28,8 +28,8 @@ class ImporterController < ApplicationController
     ImportInProgress.delete_all(["user_id = ?",User.current.id])
     # save import-in-progress data
     iip = ImportInProgress.find_or_create_by(user_id: User.current.id)
-    iip.quote_char = params[:wrapper]
-    iip.col_sep = params[:splitter]
+    iip.quote_char = params[:wrapper].blank? ? '"' : params[:wrapper]
+    iip.col_sep = params[:splitter].blank? ? ',' : params[:splitter]
     iip.encoding = params[:encoding]
     iip.created = Time.new
     params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read
@@ -95,6 +95,7 @@ class ImporterController < ApplicationController
     add_versions = params[:add_versions]
     use_issue_id = params[:use_issue_id].present? ? true : false
     ignore_non_exist = params[:ignore_non_exist]
+    allow_closed_issues_update = params[:allow_closed_issues_update]
 
     # which fields should we use? what maps to what?
     unique_field = params[:unique_field].empty? ? nil : params[:unique_field]
@@ -235,7 +236,7 @@ class ImporterController < ApplicationController
           unique_attr = translate_unique_attr(issue, unique_field, unique_attr, unique_attr_checked)
   
           issue, journal = handle_issue_update(issue, row, author, status, update_other_project, journal_field,
-                                               unique_attr, unique_field, ignore_non_exist, update_issue)
+                                               unique_attr, unique_field, ignore_non_exist, update_issue, allow_closed_issues_update)
   
           project ||= Project.find_by_id(issue.project_id)
   
@@ -353,7 +354,7 @@ class ImporterController < ApplicationController
     unique_attr
   end
 
-  def handle_issue_update(issue, row, author, status, update_other_project, journal_field, unique_attr, unique_field, ignore_non_exist, update_issue)
+  def handle_issue_update(issue, row, author, status, update_other_project, journal_field, unique_attr, unique_field, ignore_non_exist, update_issue, allow_closed_issues_update)
     if update_issue
       begin
         issue = issue_for_unique_attr(unique_attr, row[unique_field], row)
@@ -365,8 +366,8 @@ class ImporterController < ApplicationController
           raise RowFailed
         end
 
-        # ignore closed issue except reopen
-        if issue.status.is_closed?
+        # ignore closed issue except reopen, or not
+        if issue.status.is_closed? && !allow_closed_issues_update
           if status == nil || status.is_closed?
             @skip_count += 1
             @messages << l(:error_importer_row_skipped, id: row[unique_field], reason: l(:error_importer_issue_closed))

@@ -23,6 +23,7 @@ fr:
   label_unique_field: "Sélectionnez la colonne de clé unique (nécessaire pour la mise à jour de demandes existantes ou pour l'importation de relations) :"
   label_update_other_project: "Autoriser la mise à jour de demandes d'autres projets"
   label_ignore_non_exist: "Ignorer les demandes inexistantes"
+  label_allow_closed_issues_update: "Autoriser la mise à jour de demandes fermées"
   label_rule_name: "Nom de la règle"
   
   label_import_result: "Résultats de l'importation"
@@ -50,7 +51,7 @@ fr:
   error_importer: "Erreur : "
   error_importer_row_skipped: "La ligne d'id %{id} a été ignorée pour la raison suivante : %{reason}"
   error_importer_other_project_forbidden: "Le projet associé n'est pas le projet d'importation, et l'option d'autorisation de modifications dans d'autres projets n'est pas cochée."
-  error_importer_issue_closed: "La demande est déjà fermée."
+  error_importer_issue_closed: "La demande est déjà fermée, et l'option autorisant la mise à jour de demandes fermées n'est pas cochée."
   error_importer_issue_not_found: "La demande à mettre à jour n'a pas été trouvée."
   error_importer_enumfield_not_found: "La valeur du champ '%{field_name}' n'a pas été reconnue pour la ligne d'id %{id}"
   error_importer_update_failed_no_match: "Avertissement : impossible de mettre à jour la demande %{error_pos} ci-dessous, aucune correspondance n'a été trouvée pour la valeur %{value}."

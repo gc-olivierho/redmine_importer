@@ -23,6 +23,7 @@ en:
   label_unique_field: "Select unique-valued column (required for updating existing issues or importing relations):"
   label_update_other_project: "Allow updating issues from other projects"
   label_ignore_non_exist: "Ignore non-existant issues"
+  label_allow_closed_issues_update: "Allow updating closed issues"
   label_rule_name: "Input rule name"
   
   label_import_result: "Import Result"
@@ -50,7 +51,7 @@ en:
   error_importer: "Error: "
   error_importer_row_skipped: "Row with Id %{id} was skipped for the following reason: %{reason}"
   error_importer_other_project_forbidden: "The associated project is not the current one, and the option to allow changes on other projects is not checked."
-  error_importer_issue_closed: "The issue is already closed."
+  error_importer_issue_closed: "The issue is already closed, and the option to allow updating closed issue is not checked."
   error_importer_issue_not_found: "The issue to update could not be found."
   error_importer_enumfield_not_found: "The value for the field '%{field_name}' could not be matched to an existing value for row with Id %{id}"
   error_importer_update_failed_no_match: "Warning: Could not update issue %{error_pos} below, no match for the value %{value} were found."
