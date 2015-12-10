@@ -8,8 +8,7 @@ Redmine::Plugin.register :redmine_importer do
   description 'Issue import plugin for Redmine.'
   version '1.3.0'
 
-  project_module :importer do
-    permission :import, :importer => :index
-  end
+# Add Import tab access permission in the project permissions
+  permission :import, :importer => :index
   menu :project_menu, :importer, { :controller => 'importer', :action => 'index' }, :caption => :label_import, :before => :settings, :param => :project_id
 end
