@@ -30,9 +30,8 @@ class ImporterController < ApplicationController
     iip = ImportInProgress.find_or_create_by(user_id: User.current.id)
     iip.quote_char = params[:wrapper].blank? ? '"' : params[:wrapper]
     iip.col_sep = params[:splitter].blank? ? ',' : params[:splitter]
-    iip.encoding = params[:encoding]
     iip.created = Time.new
-    params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read
+    params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read.force_encoding(params[:encoding]).encode("utf-8")
     iip.save
 
     # Put the timestamp in the params to detect
