@@ -18,7 +18,7 @@ class ImporterController < ApplicationController
   ISSUE_ATTRS = [:id, :subject, :assigned_to, :fixed_version,
                  :author, :description, :category, :priority, :tracker, :status,
                  :start_date, :due_date, :done_ratio, :estimated_hours,
-                 :parent_issue, :watchers, :project ]
+                 :parent_issue, :watchers, :project, :activity_type, :spent_time ]
 
   def index; end
 
@@ -97,6 +97,9 @@ class ImporterController < ApplicationController
 
     # which fields should we use? what maps to what?
     unique_field = params[:unique_field].empty? ? nil : params[:unique_field]
+    spent_time_field = params[:spent_time].empty? ? nil : params[:spent_time]
+    # default date for logging the spent time if the option is set
+    spent_time_default_day = spent_time_field
 
     fields_map = {}
     params[:fields_map].each { |k, v| fields_map[k.unpack('U*').pack('U*')] = v }
@@ -244,6 +247,7 @@ class ImporterController < ApplicationController
           handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
           handle_custom_fields(add_versions, issue, project, row)
           handle_watchers(issue, row, watchers)
+          handle_spent_time(issue, project, row, spent_time_default_day)
         rescue RowFailed
           next
         end
@@ -256,7 +260,7 @@ class ImporterController < ApplicationController
           @messages << l(:error_importer_id_already_exists)
         end
   
-        unless issue_saved
+        if !issue_saved
           @failed_count += 1
           @failed_issues[@failed_count] = row
           @messages << l(:error_importer_data_validation_failed, error_pos: @failed_count)
@@ -519,6 +523,29 @@ class ImporterController < ApplicationController
     raise RowFailed if custom_failed_count > 0
   end
 
+  def handle_spent_time(issue, project, row, spent_time_default_day)
+    if fetch("spent_time", row).present?
+      activity_id = activity_id_for_name(fetch("activity_type", row))
+      spent_time = fetch("spent_time", row)
+      if (spent_time =~ /\A[-+]?[0-9]*\.?[0-9]+\Z/)
+        @time_entry = TimeEntry.new(
+          :project => project,
+          :issue => issue, 
+          :user => User.find_by_id(issue.assigned_to_id),
+          :spent_on => spent_time_default_day,
+          :hours => spent_time,
+          :comments => l(:default_comment_spent_time))
+        @time_entry.safe_attributes = { :project_id => project.id, :issue_id => issue.id, :activity_id => activity_id }
+        if !@time_entry.save
+          @messages << l(:error_importer_spent_time_failed, spent_time: spent_time, id: issue.id)
+        end
+      else
+        @messages << l(:error_importer_spent_time_invalid, spent_time: spent_time, id: issue.id)
+      end
+    end
+  end
+
+
   private
 
   def fetch(key, row)
@@ -710,6 +737,17 @@ class ImporterController < ApplicationController
       @version_id_by_name[name] = version.id
     end
     @version_id_by_name[name]
+  end
+
+  def activity_id_for_name(activity)
+    if activity.nil?
+      if default_activity = TimeEntryActivity.default
+        activity_id = default_activity.id
+      end
+    else
+      activity_id = TimeEntryActivity.find_by_name(activity)
+    end
+    activity_id
   end
 
   def process_multivalue_custom_field(issue, custom_field, csv_val)

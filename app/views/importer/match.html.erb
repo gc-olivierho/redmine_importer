@@ -56,7 +56,11 @@
         {:disabled => true} %>
     </label>
     <br/>
-
+    <label>
+      <%= l(:label_default_spent_time_date) %>
+      <%= text_field_tag :spent_time, '', {:size => 10 } %><%= calendar_for('spent_time') %>
+    </label>
+    <br/>
     <br/>
     <label>
       <%= check_box_tag "add_categories", true, false %>
