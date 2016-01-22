@@ -13,7 +13,6 @@ fr:
   label_match_select: "Sélectionnez le champ à faire correspondre pour chaque colonne :"
   label_import_rule: "Règles d'importation"
   label_default_tracker: "Tracker par défaut :"
-  label_importer_send_emails: "Envoyer des mails de notification"
   label_importer_add_categories: "Ajout automatique des catégories"
   label_importer_add_versions: "Ajout automatique des versions cibles"
   label_importer_use_anonymous: "Remplacer les utilisateurs inconnus par l'utilisateur Anonyme"

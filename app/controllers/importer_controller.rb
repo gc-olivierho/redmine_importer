@@ -89,7 +89,6 @@ class ImporterController < ApplicationController
     # which options were turned on?
     update_issue = params[:update_issue]
     update_other_project = params[:update_other_project]
-    send_emails = params[:send_emails]
     add_categories = params[:add_categories]
     add_versions = params[:add_versions]
     use_issue_id = params[:use_issue_id].present? ? true : false
@@ -268,21 +267,7 @@ class ImporterController < ApplicationController
           if unique_field && !row[unique_field].nil?
             @issue_by_unique_attr[row[unique_field]] = issue
           end
-  
-          if send_emails
-            if update_issue
-              if Setting.notified_events.include?('issue_updated') \
-                 && (!issue.current_journal.empty?)
-  
-                Mailer.deliver_issue_edit(issue.current_journal)
-              end
-            else
-              if Setting.notified_events.include?('issue_added')
-                Mailer.deliver_issue_add(issue)
-              end
-            end
-          end
-  
+
           # Issue relations
           begin
             IssueRelation::TYPES.each_pair do |rtype, rinfo|
