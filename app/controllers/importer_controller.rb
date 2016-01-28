@@ -585,13 +585,13 @@ class ImporterController < ApplicationController
     @samples = []
 
     begin
-      CSV.new(iip.csv_data, {:headers=>true,
-                             :encoding=>iip.encoding,
-                             :quote_char=>iip.quote_char,
-                             :col_sep=>iip.col_sep}).each_with_index do |row, i|
-                               @samples[i] = row
-                               break if i >= sample_count
-                             end # do
+      CSV.new(iip.csv_data, { :headers => true,
+                             :quote_char => iip.quote_char,
+                             :col_sep => iip.col_sep }
+            ).each_with_index do |row, i|
+                @samples[i] = row
+                break if i >= sample_count
+              end # do
 
     rescue CSV::MalformedCSVError => e
       csv_data_lines = iip.csv_data.lines.to_a

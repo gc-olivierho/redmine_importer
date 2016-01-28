@@ -8,11 +8,10 @@
 
   <fieldset class="box"><legend><%= l(:label_upload_format) %></legend>
     <p><label><%=l(:label_upload_encoding)%></label>
-      <%= select_tag "encoding",
-          "<option value='UTF-8'>UTF-8</option>" \
-          "<option value='windows-1252'>windows-1252</option>" \
-          "<option value='iso-8859-1'>iso-8859-1</option>".html_safe %></p>
-
+      <%= select_tag "encoding", options_for_select(
+      ["UTF-8",
+       "windows-1252",
+       "ISO-8859-1"]) %></p>
 
     <p><label><%=l(:label_upload_splitter)%></label>
       <%= text_field_tag "splitter", ',', {:size => 3, :maxlength => 2}%></p>
