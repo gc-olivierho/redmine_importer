@@ -58,9 +58,14 @@
     <br/>
     <label>
       <%= l(:label_default_spent_time_date) %>
-      <%= text_field_tag :spent_time, '', {:size => 10 } %><%= calendar_for('spent_time') %>
+      <%= text_field_tag :spent_time, Time.now.strftime("%Y-%m-%d"), {:size => 10 } %><%= calendar_for('spent_time') %>
     </label>
     <br/>
+    <br/>
+    <label>
+      <%= check_box_tag "disable_send_emails", true, true%>
+      <%= l(:label_importer_disable_send_emails) %>
+    </label>
     <br/>
     <label>
       <%= check_box_tag "add_categories", true, false %>
