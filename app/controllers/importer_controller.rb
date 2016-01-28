@@ -18,7 +18,7 @@ class ImporterController < ApplicationController
   ISSUE_ATTRS = [:id, :subject, :assigned_to, :fixed_version,
                  :author, :description, :category, :priority, :tracker, :status,
                  :start_date, :due_date, :done_ratio, :estimated_hours,
-                 :parent_issue, :watchers, :project, :activity_type, :spent_time ]
+                 :parent_issue, :watchers, :project, :spent_time, :activity, :user_for_spent_time]
 
   def index; end
 
@@ -527,13 +527,18 @@ class ImporterController < ApplicationController
 
   def handle_spent_time(issue, project, row, spent_time_default_day)
     if fetch("spent_time", row).present?
-      activity_id = activity_id_for_name(fetch("activity_type", row))
+      activity_id = activity_id_for_name(fetch("activity", row))
+      begin
+        user_for_spent_time = user_for_login(fetch("user_for_spent_time", row))
+      rescue ActiveRecord::RecordNotFound
+        user_for_spent_time = User.find_by_id(issue.assigned_to_id)
+      end
       spent_time = fetch("spent_time", row)
       if (spent_time =~ /\A[-+]?[0-9]*\.?[0-9]+\Z/)
         @time_entry = TimeEntry.new(
           :project => project,
           :issue => issue, 
-          :user => User.find_by_id(issue.assigned_to_id),
+          :user => user_for_spent_time,
           :spent_on => spent_time_default_day,
           :hours => spent_time,
           :comments => l(:default_comment_spent_time))
@@ -681,7 +686,11 @@ class ImporterController < ApplicationController
   # Returns the id for the given user or raises RecordNotFound
   # Implements a cache of users based on login name
   def user_for_login!(login)
-    login = login.downcase unless login.nil?
+    if login.nil?
+      raise ActiveRecord::RecordNotFound
+    else
+      login = login.downcase unless login.nil?
+    end
     begin
       if !@user_by_login.has_key?(login)
         @user_by_login[login] = User.find_by_login!(login)
