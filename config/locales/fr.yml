@@ -15,6 +15,7 @@ fr:
   label_import_rule: "Règles d'importation"
   label_default_tracker: "Tracker par défaut :"
   label_default_spent_time_date: "Date par défaut pour le temps passé importé:"
+  label_importer_disable_send_emails: "Désactiver toutes les notifications par mail de Redmine pour les modifications importées"
   label_importer_add_categories: "Ajout automatique des catégories"
   label_importer_add_versions: "Ajout automatique des versions cibles"
   label_importer_use_anonymous: "Remplacer les utilisateurs inconnus par l'utilisateur Anonyme"

@@ -94,6 +94,8 @@ class ImporterController < ApplicationController
     use_issue_id = params[:use_issue_id].present? ? true : false
     ignore_non_exist = params[:ignore_non_exist]
     allow_closed_issues_update = params[:allow_closed_issues_update]
+    # Set a thread flag for use in ActionMailer interceptor
+    Thread.current[:bulk_import_disable_notifications] = params[:disable_send_emails].present? ? true : false
 
     # which fields should we use? what maps to what?
     unique_field = params[:unique_field].empty? ? nil : params[:unique_field]
