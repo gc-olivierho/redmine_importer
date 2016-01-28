@@ -31,7 +31,7 @@ class ImporterController < ApplicationController
     iip.quote_char = params[:wrapper].blank? ? '"' : params[:wrapper]
     iip.col_sep = params[:splitter].blank? ? ',' : params[:splitter]
     iip.created = Time.new
-    params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read.force_encoding(params[:encoding]).encode("utf-8")
+    params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read.force_encoding(params[:encoding]).encode("UTF-8")
     iip.save
 
     # Put the timestamp in the params to detect
@@ -185,7 +185,7 @@ class ImporterController < ApplicationController
             status = nil
           end
           author = if @attrs_map["author"]
-                     user_for_login!(fetch("author", row))
+                     user_for_login(fetch("author", row))
                    else
                      User.current
                    end
@@ -211,14 +211,14 @@ class ImporterController < ApplicationController
           end
   
           if fetch("assigned_to", row).present?
-            assigned_to = user_for_login!(fetch("assigned_to", row))
+            assigned_to = user_for_login(fetch("assigned_to", row))
           else
             assigned_to = nil
           end
   
           if fetch("fixed_version", row).present?
             fixed_version_name = fetch("fixed_version", row)
-            fixed_version_id = version_id_for_name!(project,
+            fixed_version_id = version_id_for_name(project,
                                                     fixed_version_name,
                                                     add_versions)
           else
@@ -326,6 +326,25 @@ class ImporterController < ApplicationController
 
     # Garbage prevention: clean up iips older than 3 days
     ImportInProgress.delete_all(["created < ?",Time.new - 3*24*60*60])
+  end
+
+  private
+
+  def init_globals
+    @handle_count = 0
+    @update_count = 0
+    @skip_count = 0
+    @failed_count = 0
+    @failed_issues = Hash.new
+    @messages = Array.new
+    @affect_projects_issues = Hash.new
+    # This is a cache of previously inserted issues indexed by the value
+    # the user provided in the unique column
+    @issue_by_unique_attr = Hash.new
+    # Cache of user id by login
+    @user_by_login = Hash.new
+    # Cache of Version by name
+    @version_id_by_name = Hash.new
   end
 
   def translate_unique_attr(issue, unique_field, unique_attr, unique_attr_checked)
@@ -445,30 +464,13 @@ class ImporterController < ApplicationController
     end
   end
 
-  def init_globals
-    @handle_count = 0
-    @update_count = 0
-    @skip_count = 0
-    @failed_count = 0
-    @failed_issues = Hash.new
-    @messages = Array.new
-    @affect_projects_issues = Hash.new
-    # This is a cache of previously inserted issues indexed by the value
-    # the user provided in the unique column
-    @issue_by_unique_attr = Hash.new
-    # Cache of user id by login
-    @user_by_login = Hash.new
-    # Cache of Version by name
-    @version_id_by_name = Hash.new
-  end
-
   def handle_watchers(issue, row, watchers)
     watcher_failed_count = 0
     if watchers
       addable_watcher_users = issue.addable_watcher_users
       watchers.split(',').each do |watcher|
         begin
-          watcher_user = user_for_login!(watcher.strip)
+          watcher_user = user_for_login(watcher.strip)
           if issue.watcher_users.include?(watcher_user)
             next
           end
@@ -499,9 +501,9 @@ class ImporterController < ApplicationController
           begin
             value = case cf.field_format
                       when 'user'
-                        user_id_for_login!(value).to_s
+                        user_id_for_login(value).to_s
                       when 'version'
-                        version_id_for_name!(project, value, add_versions).to_s
+                        version_id_for_name(project, value, add_versions).to_s
                       when 'date'
                         value.to_date.to_s(:db)
                       when cf.field_format == 'list'
@@ -552,9 +554,6 @@ class ImporterController < ApplicationController
     end
   end
 
-
-  private
-
   def fetch(key, row)
     row[@attrs_map[key]]
   end
@@ -588,7 +587,6 @@ class ImporterController < ApplicationController
     # display sample
     sample_count = 5
     @samples = []
-
     begin
       CSV.new(iip.csv_data, { :headers => true,
                              :quote_char => iip.quote_char,
@@ -633,7 +631,7 @@ class ImporterController < ApplicationController
       flash[:error] = l(:error_importer_missing_header_columns, 
                         missing_header_columns: missing_header_columns, 
                         header_size: @headers.size,
-                        header_name: iip.csv_data.lines.to_a[0])
+                        header_name: iip.csv_data.lines[0])
 
       redirect_to project_importer_path(:project_id => @project)
 
@@ -685,7 +683,7 @@ class ImporterController < ApplicationController
 
   # Returns the id for the given user or raises RecordNotFound
   # Implements a cache of users based on login name
-  def user_for_login!(login)
+  def user_for_login(login)
     if login.nil?
       raise ActiveRecord::RecordNotFound
     else
@@ -722,8 +720,9 @@ class ImporterController < ApplicationController
     end
     @user_by_login[login]
   end
-  def user_id_for_login!(login)
-    user = user_for_login!(login)
+
+  def user_id_for_login(login)
+    user = user_for_login(login)
     user ? user.id : nil
   end
 
@@ -732,7 +731,7 @@ class ImporterController < ApplicationController
   # Implements a cache of version ids based on version name
   # If add_versions is true and a valid name is given,
   # will create a new version and save it when it doesn't exist yet.
-  def version_id_for_name!(project,name,add_versions)
+  def version_id_for_name(project,name,add_versions)
     if !@version_id_by_name.has_key?(name)
       version = project.shared_versions.find_by_name(name)
       if !version
@@ -764,7 +763,7 @@ class ImporterController < ApplicationController
   def process_multivalue_custom_field(issue, custom_field, csv_val)
     csv_val.split(',').map(&:strip).map do |val|
       if custom_field.field_format == 'version'
-        version = version_id_for_name!(project, val, add_versions)
+        version = version_id_for_name(project, val, add_versions)
         version.id
       else
         val
