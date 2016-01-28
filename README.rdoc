@@ -18,3 +18,23 @@ en, fr, de, zh, pt-BR, ru and ja localizations included. Only en and fr are up t
 If anyone wants to update translations, or report / fix bugs it will be appreciated.
 
 User documentation at https://github.com/leovitch/redmine_importer/wiki.
+
+= Release history
+* 1.3.0   *Forked from go2null version
+          * Redmine 3.0 / Rails 4 compatibility
+          * Added issue creation when no issue id is provided
+          * Added matching users on full names and not only on login names
+          * Support for custom list fields (from Zh's redmine_importer)
+          * Changed some defaults in the options
+          * improved field mapping page layout
+          * Added French translations + moved hardcoded error messages to resources
+* 1.4.0   * Added warnings in case of enumeration field not matched (status, tracker, priority)
+          * Added messages for skipped lines
+          * When not provided, tracker, priority and status fields are set to their default, rather than triggering an error message
+          * Made field mapping work automatically on localised field names (and not only for English names)
+          * Added an option for updating closed issues
+          * Fixed a Page 500 error when CSV separator or text delimiter were set to blank by the user
+          * Moved the right for the Import tab to the Project rights section
+          * Fixed issue on CSV encodings when other than UTF-8
+          * Added support for importing spent times on imported issues, and uses an Activity field and a User_spent_time field if provided. Otherwise, sets the spent time to the default activity, and for the user the issue is assigned to
+          * Made option to disable sending notifications work (no mail from Redmine sent at all)
