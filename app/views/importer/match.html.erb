@@ -14,6 +14,8 @@
   </script>
 <% end %>
 
+<% if @headers %>
+
 <h2><%= l(:label_match_columns) %></h2>
 
 <%= form_tag({:action => 'result'}, {:multipart => true}) do %>
@@ -67,26 +69,12 @@
       <%= l(:label_importer_disable_send_emails) %>
     </label>
     <br/>
-    <label>
-      <%= check_box_tag "add_categories", true, false %>
-      <%= l(:label_importer_add_categories) %>
-    </label>
-    <br/>
-    <label>
-      <%= check_box_tag "add_versions", true, true %>
-      <%= l(:label_importer_add_versions) %>
-    </label>
-    <br/>
-    <label>
-      <%= check_box_tag "use_anonymous", true, true %>
-      <%= l(:label_importer_use_anonymous) %>
-    </label>
-    <br/>
-    <label>
+<!-- OHO: this option can be used to force creating issues with specific Ids. It works, but it is too dangerous for normal use
+   <label>
       <%= check_box_tag "use_issue_id", true, false %>
       <%= l(:label_importer_use_issue_ids) %>
     </label>
-    <br/>
+    <br/>-->
     <label>
       <%= check_box_tag "update_issue", true, true %>
       <%= l(:label_update_issue) %>
@@ -100,16 +88,30 @@
       <%= l(:label_update_other_project) %>
     </label>
     <br/>
-
-    <label>
-      <%= check_box_tag "ignore_non_exist", true, false, {:disabled => true} %>
-      <%= l(:label_ignore_non_exist) %>
-    </label>
-
-    <br/>
     <label>
       <%= check_box_tag "allow_closed_issues_update", true, true %>
       <%= l(:label_allow_closed_issues_update) %>
+    </label>
+    <br/>
+    <br/>
+    <label>
+      <%= check_box_tag "add_categories", true, false %>
+      <%= l(:label_importer_add_categories) %>
+    </label>
+    <br/>
+    <label>
+      <%= check_box_tag "add_versions", true, false %>
+      <%= l(:label_importer_add_versions) %>
+    </label>
+    <br/>
+    <label>
+      <%= check_box_tag "use_anonymous", true, false %>
+      <%= l(:label_importer_use_anonymous) %>
+    </label>
+    <br/>
+    <label>
+      <%= check_box_tag "ignore_non_exist", true, false, {:disabled => true} %>
+      <%= l(:label_ignore_non_exist) %>
     </label>
     <br/>
   </fieldset>
@@ -143,3 +145,4 @@
     </tr>
   </tbody>
 </table>
+<% end %>

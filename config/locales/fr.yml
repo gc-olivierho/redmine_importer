@@ -44,6 +44,7 @@ fr:
   text_rmi_specify_unique_field_for_update: "Le champ Clé unique doit être indiqué car l'option Mise à jour des demandes existante est sélectionnée"
   text_rmi_specify_unique_field_for_column: "Le champ Clé unique doit être indiqué car la colonne %{column} fait référence à d'autres tâches" 
 
+  error_invalid_encoding: "L'encodage indiqué n'est pas correct"
   error_importer_no_import_in_progress: "Aucune importation n'est actuellement en cours (utilisateur : %{user})"
   error_importer_import_already_in_progress: "Il semble que vous ayiez lancé une autre importation après avoir lancé celle-ci. Cette importation ne peut pas être effectuée."
   error_importer_id_mapping: "Vous devez spécifier une correspondance pour le champ id lorsque vous importez avec l'option d'utiliser les identifiants de demandes fournis."

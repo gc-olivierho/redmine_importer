@@ -32,7 +32,13 @@ class ImporterController < ApplicationController
     iip.col_sep = params[:splitter].blank? ? ',' : params[:splitter]
     iip.created = Time.new
     params[:file].blank? ? iip.csv_data = "" : iip.csv_data = params[:file].read.force_encoding(params[:encoding]).encode("UTF-8")
+    # check that the encoding provided by the user was correct, and pops up an error otherwise
+    if !iip.csv_data.valid_encoding?
+      iip.csv_data = ""
+      flash[:error] = l(:error_invalid_encoding)
+    end
     iip.save
+    return if flash[:error].present?
 
     # Put the timestamp in the params to detect
     # users with two imports in progress
@@ -143,7 +149,6 @@ class ImporterController < ApplicationController
 
 
     csv_opt = {:headers=>true,
-               :encoding=>iip.encoding,
                :quote_char=>iip.quote_char,
                :col_sep=>iip.col_sep}
     # Catch CSV read errors
@@ -191,7 +196,7 @@ class ImporterController < ApplicationController
                    end
           priority_name = fetch("priority", row)
           if !priority_name.nil?
-            priority = Enumeration.find_by_name(priority_name)
+            priority = IssuePriority.find_by_name(priority_name)
             if (@attrs_map["priority"].present? && !priority) 
               @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
             end
@@ -247,20 +252,20 @@ class ImporterController < ApplicationController
   
           assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
           handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
-          handle_custom_fields(add_versions, issue, project, row)
-          handle_watchers(issue, row, watchers)
-          handle_spent_time(issue, project, row, spent_time_default_day)
         rescue RowFailed
           next
         end
-  
   
         begin
           issue_saved = issue.save
         rescue ActiveRecord::RecordNotUnique
           issue_saved = false
           @messages << l(:error_importer_id_already_exists)
+        rescue ActiveRecord::DeadlockVictim
+          # retry once in case we were just unlucky
+          issue_saved = issue.save
         end
+  
   
         if !issue_saved
           @failed_count += 1
@@ -270,6 +275,11 @@ class ImporterController < ApplicationController
             @messages << l(:error_importer) + attr.to_s + " " + error_message.to_s
           end
         else
+          # Deal with updates impacting other tables only if issue update was successful
+          handle_custom_fields(add_versions, issue, project, row)
+          handle_watchers(issue, row, watchers)
+          handle_spent_time(issue, project, row, spent_time_default_day)
+
           if unique_field && !row[unique_field].nil?
             @issue_by_unique_attr[row[unique_field]] = issue
           end
@@ -386,8 +396,15 @@ class ImporterController < ApplicationController
 
         # init journal
         note = row[journal_field] || ''
-        journal = issue.init_journal(author || User.current,
-                                     note || '')
+        user_for_note = User.current
+        # If there is a non-empty note, we use the field "user_for_spent_time" for the author of changes. Otherwise, we set it to the user running the import
+        if !note.empty?
+          begin
+            user_for_note = user_for_login(fetch("user_for_spent_time", row))
+          rescue ActiveRecord::RecordNotFound
+          end
+        end
+        journal = issue.init_journal(user_for_note, note || '')
 
         @update_count += 1
 
@@ -536,7 +553,7 @@ class ImporterController < ApplicationController
         user_for_spent_time = User.find_by_id(issue.assigned_to_id)
       end
       spent_time = fetch("spent_time", row)
-      if (spent_time =~ /\A[-+]?[0-9]*\.?[0-9]+\Z/)
+      if (spent_time =~ /\A[-+]?[0-9]*\.?[0-9]+\Z/) && issue.id
         @time_entry = TimeEntry.new(
           :project => project,
           :issue => issue, 
