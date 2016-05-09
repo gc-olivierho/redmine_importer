@@ -252,6 +252,9 @@ class ImporterController < ApplicationController
   
           assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
           handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
+          handle_custom_fields(add_versions, issue, project, row)
+          handle_watchers(issue, row, watchers)
+          handle_spent_time(issue, project, row, spent_time_default_day)
         rescue RowFailed
           next
         end
@@ -275,11 +278,6 @@ class ImporterController < ApplicationController
             @messages << l(:error_importer) + attr.to_s + " " + error_message.to_s
           end
         else
-          # Deal with updates impacting other tables only if issue update was successful
-          handle_custom_fields(add_versions, issue, project, row)
-          handle_watchers(issue, row, watchers)
-          handle_spent_time(issue, project, row, spent_time_default_day)
-
           if unique_field && !row[unique_field].nil?
             @issue_by_unique_attr[row[unique_field]] = issue
           end
