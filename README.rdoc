@@ -36,5 +36,7 @@ User documentation at https://github.com/leovitch/redmine_importer/wiki.
           * Fixed a Page 500 error when CSV separator or text delimiter were set to blank by the user
           * Moved the right for the Import tab to the Project rights section
           * Fixed issue on CSV encodings when other than UTF-8
-          * Added support for importing spent times on imported issues, and uses an Activity field and a User_spent_time field if provided. Otherwise, sets the spent time to the default activity, and for the user the issue is assigned to
+          * Added support for importing spent times on imported issues, using an Activity field and a User_spent_time field if provided. Otherwise, sets the spent time to the default activity, and for the user the issue is assigned to
           * Made option to disable sending notifications work (no mail from Redmine sent at all)
+* 1.4.1   * Added support for enumeration custom fields ("Key/value list")
+          * 

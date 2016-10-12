@@ -521,12 +521,12 @@ class ImporterController < ApplicationController
                         version_id_for_name(project, value, add_versions).to_s
                       when 'date'
                         value.to_date.to_s(:db)
-                      when cf.field_format == 'list'
+                      when cf.field_format == 'list', 'enumeration'
                         value.split(',').map(&:strip)
                       else
                         value
                     end
-            h[cf.id] = value
+            h[cf.id] = cf.value_from_keyword(value, issue)
           rescue
             if custom_failed_count == 0
               custom_failed_count += 1
@@ -781,7 +781,7 @@ class ImporterController < ApplicationController
         version = version_id_for_name(project, val, add_versions)
         version.id
       else
-        val
+        custom_field.value_from_keyword(val, issue)
       end
     end
   end

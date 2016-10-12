@@ -7,7 +7,7 @@ Redmine::Plugin.register :redmine_importer do
   name 'Issue Importer'
   author 'Martin Liu / Leo Hourvitz / Stoyan Zhekov / Jérôme Bataille / Olivier Houdas'
   description 'Issue import plugin for Redmine.'
-  version '1.4.0'
+  version '1.4.1'
 
 # Add Import tab access permission in the project permissions
   permission :import, :importer => :index
