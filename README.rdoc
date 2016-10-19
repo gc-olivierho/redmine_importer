@@ -39,4 +39,5 @@ User documentation at https://github.com/leovitch/redmine_importer/wiki.
           * Added support for importing spent times on imported issues, using an Activity field and a User_spent_time field if provided. Otherwise, sets the spent time to the default activity, and for the user the issue is assigned to
           * Made option to disable sending notifications work (no mail from Redmine sent at all)
 * 1.4.1   * Added support for enumeration custom fields ("Key/value list")
+* 1.4.2   * Fixed a bug on registering the mail interceptor to cancel mails on bulk import, so as not to interfere with redmine_notification_manager_plugin (requires the same change in redmine_notification_manager_plugin\lib\action_mailer_base_extensions.rb)
           * 
