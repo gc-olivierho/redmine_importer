@@ -12,11 +12,7 @@ module MailNotifications
       end
     end
 
-    if (!ActionMailer::Base::Mail.class_variable_get(:@@delivery_interceptors).nil?)
-      ::ActionMailer::Base.register_interceptor(self)
-    else
-      ::ActionMailer::Base.register_interceptor([ActionMailer::Base::Mail.class_variable_get(:@@delivery_interceptors), self])
-    end
+    ::ActionMailer::Base.register_interceptor(self)
   end
 
 end

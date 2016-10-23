@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 require 'redmine'
-require 'action_mailer_mail_interceptor'
+require 'action_mailer_importer_interceptor'
 
 Redmine::Plugin.register :redmine_importer do
   name 'Issue Importer'
