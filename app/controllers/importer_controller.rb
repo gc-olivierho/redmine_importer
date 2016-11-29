@@ -82,7 +82,7 @@ class ImporterController < ApplicationController
     unique_attr_checked = false
 
     # Retrieve saved import data
-    iip = ImportInProgress.find_by_user_id(User.current.id)
+    iip = ImportInProgress.find_by(user_id: User.current.id)
     if iip == nil
       flash[:error] = l(:error_importer_no_import_in_progress, user: User.current.firstname + " " + User.current.lastname)
       return
@@ -154,7 +154,7 @@ class ImporterController < ApplicationController
     # Catch CSV read errors
     begin
       CSV.new(iip.csv_data, csv_opt).each do |row|
-        project = Project.find_by_name(fetch("project", row))
+        project = Project.find_by(name: fetch("project", row))
         project ||= @project
     
         begin
@@ -173,16 +173,16 @@ class ImporterController < ApplicationController
   
           tracker_name = fetch("tracker", row)
           if !tracker_name.nil?
-            tracker = Tracker.find_by_name(tracker_name)
-            if (@attrs_map["tracker"].present? && !tracker) 
+            tracker_id = Tracker.all.select{|s| s.name == tracker_name }.first.try(:id)
+            if (@attrs_map["tracker"].present? && !tracker_id) 
               @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_tracker))
             end
           else
-            tracker = nil
+            tracker_id = nil
           end
           status_name = fetch("status", row)
           if !status_name.nil?
-            status = IssueStatus.find_by_name(status_name)
+            status = IssueStatus.all.select{|s| s.name == status_name }.first
             if (@attrs_map["status"].present? && !status) 
               @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_status))
             end
@@ -196,16 +196,15 @@ class ImporterController < ApplicationController
                    end
           priority_name = fetch("priority", row)
           if !priority_name.nil?
-            priority = IssuePriority.find_by_name(priority_name)
-            if (@attrs_map["priority"].present? && !priority) 
+            priority_id = IssuePriority.all.select{|s| s.name == priority_name }.first.try(:id)
+            if (@attrs_map["priority"].present? && !priority_id) 
               @messages << l(:error_importer_enumfield_not_found, id: row[unique_field], field_name: l(:field_priority))
             end
           else
-            priority = nil
+            priority_id = nil
           end
           category_name = fetch("category", row)
-          category = IssueCategory.find_by_project_id_and_name(project.id,
-                                                               category_name)
+          category = IssueCategory.named(category_name).find_by(project_id: project.id)
   
           if (!category) \
             && category_name && category_name.length > 0 \
@@ -234,7 +233,7 @@ class ImporterController < ApplicationController
           watchers = fetch("watchers", row)
   
           issue.project_id = project != nil ? project.id : @project.id
-          issue.tracker_id = tracker != nil ? tracker.id : default_tracker
+          issue.tracker_id = tracker_id != nil ? tracker_id : default_tracker
           issue.author_id = author != nil ? author.id : User.current.id
         rescue ActiveRecord::RecordNotFound
           log_failure(row, l(:error_importer_record_not_found, error_pos: @failed_count+1, unfound_class: @unfound_class, unfound_key: @unfound_key))
@@ -246,11 +245,11 @@ class ImporterController < ApplicationController
           issue, journal = handle_issue_update(issue, row, author, status, update_other_project, journal_field,
                                                unique_attr, unique_field, ignore_non_exist, update_issue, allow_closed_issues_update)
   
-          project ||= Project.find_by_id(issue.project_id)
+          project ||= Project.find_by(id: issue.project_id)
   
           update_project_issues_stat(project)
   
-          assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
+          assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority_id)
           handle_parent_issues(issue, row, ignore_non_exist, unique_attr)
           handle_custom_fields(add_versions, issue, project, row)
           handle_watchers(issue, row, watchers)
@@ -435,10 +434,10 @@ class ImporterController < ApplicationController
     end
   end
 
-  def assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority)
+  def assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority_id)
     # required attributes
     issue.status_id = status != nil ? status.id : issue.status_id
-    issue.priority_id = priority != nil ? priority.id : issue.priority_id
+    issue.priority_id = priority_id
     issue.subject = fetch("subject", row) || issue.subject
 
     # optional attributes
@@ -548,7 +547,7 @@ class ImporterController < ApplicationController
       begin
         user_for_spent_time = user_for_login(fetch("user_for_spent_time", row))
       rescue ActiveRecord::RecordNotFound
-        user_for_spent_time = User.find_by_id(issue.assigned_to_id)
+        user_for_spent_time = User.find_by(id: issue.assigned_to_id)
       end
       spent_time = fetch("spent_time", row)
       if (spent_time =~ /\A[-+]?[0-9]*\.?[0-9]+\Z/) && issue.id
@@ -663,7 +662,7 @@ class ImporterController < ApplicationController
     end
 
     if unique_attr == "id"
-      issues = [Issue.find_by_id(attr_value)]
+      issues = [Issue.find_by(id: attr_value)]
     else
       # Use IssueQuery class Redmine >= 2.3.0
       begin
@@ -706,7 +705,7 @@ class ImporterController < ApplicationController
     end
     begin
       if !@user_by_login.has_key?(login)
-        @user_by_login[login] = User.find_by_login!(login)
+        @user_by_login[login] = User.find_by!(login: login)
       end
     rescue ActiveRecord::RecordNotFound
     # Try with the full name (first + last or just last), as this is what Redmine displays in lists
@@ -748,7 +747,7 @@ class ImporterController < ApplicationController
   # will create a new version and save it when it doesn't exist yet.
   def version_id_for_name(project,name,add_versions)
     if !@version_id_by_name.has_key?(name)
-      version = project.shared_versions.find_by_name(name)
+      version = project.shared_versions.find_by(name: name)
       if !version
         if name && (name.length > 0) && add_versions
           version = project.versions.build(:name=>name)
@@ -770,7 +769,7 @@ class ImporterController < ApplicationController
         activity_id = default_activity.id
       end
     else
-      activity_id = TimeEntryActivity.find_by_name(activity)
+      activity_id = TimeEntryActivity.named(activity)
     end
     activity_id
   end
