@@ -40,4 +40,6 @@ User documentation at https://github.com/leovitch/redmine_importer/wiki.
           * Made option to disable sending notifications work (no mail from Redmine sent at all)
 * 1.4.1   * Added support for enumeration custom fields ("Key/value list")
 * 1.4.2   * Fixed a bug on registering the mail interceptor to cancel mails on bulk import, so as not to interfere with redmine_notification_manager_plugin (requires the same change in redmine_notification_manager_plugin\lib\action_mailer_base_extensions.rb)
-          * 
+* 1.4.3   * Changed calls to deprecated Ruby on Rails method find_by_name()
+          * Used a new way to find Status, Tracker and Priority field values so that we can consider the translations if there are some done by the localizable plugin
+          * Added a link on the issue ID for lines in error

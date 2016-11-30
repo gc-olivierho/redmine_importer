@@ -42,12 +42,16 @@
       </tr>
     </thead>
     <tbody>
-      <% @failed_issues.each do |id, issue| -%>
+      <% @failed_issues.each do |row_id, issue_vals| -%>
         <tr class="<%= cycle("odd", "even") %>">
-          <td><%= id %></td>
-          <% issue.each do |column| %>
-            <%- data = column[1] -%>
-            <%- data = data.unpack('U*').pack('U*') if data.is_a?(String) -%>
+          <td><%= row_id %></td>
+          <% issue_vals.each do |fields|
+               data = fields[1]
+               data = data.unpack('U*').pack('U*') if data.is_a?(String)
+               if (fields[0]==@attrs_map["id"] && !data.nil?)
+                 data = link_to data, issue_path(id: data)
+               end
+          %>
             <%= content_tag 'td', data %>
           <% end %>
         </tr>
