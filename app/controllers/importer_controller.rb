@@ -58,6 +58,9 @@ class ImporterController < ApplicationController
 
     # fields
     @attrs = Array.new
+    # Added a special entry to be able to match "#" with the id, as when exporting from Redmine in CSV, the id column is named "#"
+    # Note: works only with ANSI files ("#" in Unicode is saved with a different code)
+    @attrs << ["#", :id]
     ISSUE_ATTRS.each do |attr|
       if User.current && User.current.language.present?
         @attrs << [l_or_humanize(attr, :prefix=>"field_", :default => attr, :locale =>  User.current.language), attr]
@@ -330,6 +333,7 @@ class ImporterController < ApplicationController
 
     # Clean up after ourselves
     iip.delete
+    Thread.current[:bulk_import_disable_notifications] = false
 
     # Garbage prevention: clean up iips older than 3 days
     ImportInProgress.delete_all(["created < ?",Time.new - 3*24*60*60])
@@ -437,7 +441,7 @@ class ImporterController < ApplicationController
   def assign_issue_attrs(issue, category, fixed_version_id, assigned_to, status, row, priority_id)
     # required attributes
     issue.status_id = status != nil ? status.id : issue.status_id
-    issue.priority_id = priority_id
+    issue.priority_id = priority_id != nil ? priority_id : issue.priority_id
     issue.subject = fetch("subject", row) || issue.subject
 
     # optional attributes

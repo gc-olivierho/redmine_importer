@@ -1,7 +1,7 @@
 # Patch ActionMailer to disable notifications of issue changes if
 # Thread.current[:bulk_import_disable_notifications] = true
 
-module MailNotifications
+module MailNotificationsImporter
   class MailInterceptor
 
     def self.delivering_email(mail)

@@ -1,14 +1,9 @@
 module ImporterHelper
   def matched_attrs(column)
-    matched = ''
-    @attrs.each do |k,v|
-      if v.to_s.casecmp(column.to_s.strip.sub(" ") {|sp| "_" }) == 0 \
-        || k.to_s.casecmp(column.to_s.strip) == 0
-
-        matched = v
-      end
-    end
-    matched
+    match = @attrs.find { |k,v| 
+      v.to_s.casecmp(column.strip.sub(" ") {|sp| "_" }) == 0 || k.casecmp(column.strip) == 0
+    }
+    match.nil? ? nil : match[1]
   end
 
   def force_utf8(str)
