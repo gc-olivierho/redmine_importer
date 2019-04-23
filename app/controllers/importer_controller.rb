@@ -262,13 +262,16 @@ class ImporterController < ApplicationController
         end
   
         begin
-          issue_saved = issue.save
+          issue_saved = issue.save!
         rescue ActiveRecord::RecordNotUnique
           issue_saved = false
           @messages << l(:error_importer_id_already_exists)
         rescue ActiveRecord::DeadlockVictim
           # retry once in case we were just unlucky
           issue_saved = issue.save
+        rescue Exception
+          # in case of any unhandled exception, give up
+          issue_saved = false
         end
   
   
@@ -514,7 +517,7 @@ class ImporterController < ApplicationController
       value = row[@attrs_map[cf.name]]
       unless value.blank?
         if cf.multiple
-          h[cf.id] = process_multivalue_custom_field(issue, cf, value)
+          h[cf.id] = process_multivalue_custom_field(issue, cf, value).flatten
         else
           begin
             value = case cf.field_format
@@ -779,14 +782,14 @@ class ImporterController < ApplicationController
   end
 
   def process_multivalue_custom_field(issue, custom_field, csv_val)
-    csv_val.split(',').map(&:strip).map do |val|
+    csv_val.split(',').map { |val|
       if custom_field.field_format == 'version'
-        version = version_id_for_name(project, val, add_versions)
+        version = version_id_for_name(project, val.to_i, add_versions)
         version.id
       else
-        custom_field.value_from_keyword(val, issue)
+        custom_field.value_from_keyword(val.strip, issue)
       end
-    end
+    }
   end
 
   class RowFailed < StandardError

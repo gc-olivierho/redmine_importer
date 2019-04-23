@@ -42,3 +42,4 @@ User documentation at https://github.com/leovitch/redmine_importer/wiki.
 * 1.4.2   * Added automatic association of id field when the field name is "#" in the imported file
           * Fixed an issue with the disabling of mails
           * Set the priority to unchanged if not present in the imported file
+* 1.4.3   * Fixed a crash when the Target version field is compulsory and the value to import does not exist and automatic creation is disabled
